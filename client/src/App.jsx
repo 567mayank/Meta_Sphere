@@ -16,8 +16,10 @@ function GameSetup() {
       this.load.image('background', '../assets/tile.png');
       this.load.image('star', '../assets/star.png');
       this.load.image('wall', '../assets/wall.jpeg');
-      this.load.image('couch', '../assets/couch.jpeg');
-      // this.load.image('ground', '../assets/platform.png');
+      this.load.image('couch', '../assets/couch.PNG');
+      this.load.image('couch2', '../assets/couch2.PNG');
+      this.load.image('clock', '../assets/clock.PNG');
+      this.load.image('table', '../assets/table2.PNG');
       this.load.spritesheet('dude', 
         '../assets/dude.png',
         { frameWidth: 32, frameHeight: 48 }
@@ -48,6 +50,16 @@ function GameSetup() {
       this.add.image(screenWidth - screenWidth / 4, screenHeight / 2, 'wall').setDisplaySize(tileHeight / 2, screenHeight / 2); // left middle wall
 
 
+      // furniture starting
+      // for (var i = 2 * tileHeight; i < screenHeight - tileHeight; i += 2 * tileHeight) {
+      //   this.add.image(tileHeight * 1.05, i, 'couch').setDisplaySize(tileHeight, 2 * tileHeight)
+      // }
+
+      var gap = 170; 
+      for (var i = 4 * tileHeight; i < screenWidth - tileHeight * 3; i += 4 * tileHeight + gap) {
+          this.add.image(i, tileHeight * 1.05, 'couch2').setDisplaySize(tileHeight * 4, tileHeight);
+          this.add.image(i, tileHeight * 2.3, 'table').setDisplaySize(tileHeight * 4, tileHeight);
+      }
 
     
 
