@@ -2,6 +2,12 @@ import React, { useEffect } from 'react'
 import Phaser from 'phaser'
 
 function GameSetup() {
+
+  const screenHeight = 600
+  const screenWidth = 1500
+  const tileWidth = 48; 
+  const tileHeight = 48; 
+
   var cursors;
   var player;
   class Example extends Phaser.Scene {
@@ -9,7 +15,8 @@ function GameSetup() {
       this.load.setBaseURL('/');
       this.load.image('background', '../assets/tile.png');
       this.load.image('star', '../assets/star.png');
-      this.load.image('wall', '../assets/wall.png');
+      this.load.image('wall', '../assets/wall.jpeg');
+      this.load.image('couch', '../assets/couch.jpeg');
       // this.load.image('ground', '../assets/platform.png');
       this.load.spritesheet('dude', 
         '../assets/dude.png',
@@ -19,17 +26,30 @@ function GameSetup() {
     
     create () {
       var platforms;
-      const tileWidth = 48; 
-      const tileHeight = 48; 
-
-      for (let y = 0; y < 600; y += tileHeight) {
-          for (let x = 0; x < 1500; x += tileWidth) {
+    
+      for (let y = 0; y < screenHeight; y += tileHeight) {
+          for (let x = 0; x < screenWidth; x += tileWidth) {
               this.add.image(x, y, 'background').setOrigin(0, 0); 
           }
       }
 
-      // this.add.image(2 * tileWidth, 0, 'star').setOrigin(0, 0);
-      this.add.image(50,0, 'wall').setDisplaySize(2000, 100);
+      this.add.image(0, 0, 'wall').setDisplaySize(2 * screenWidth, tileHeight);  // top wall
+      this.add.image(0, 0, 'wall').setDisplaySize(tileHeight, 2 * screenHeight); // left wall
+      this.add.image(screenWidth, 0, 'wall').setDisplaySize(tileHeight, 2 * screenHeight); // right wall
+
+      this.add.image(0, screenHeight, 'wall').setDisplaySize(screenWidth - 80, tileHeight); // bottom left wall
+      this.add.image(screenWidth, screenHeight, 'wall').setDisplaySize(screenWidth - 80, tileHeight);  // bottom right wall
+
+
+      this.add.image(screenWidth / 2 + 40, screenHeight, 'wall').setDisplaySize(tileHeight / 2, screenHeight); // entrance wall
+
+      this.add.image(screenWidth / 4, screenHeight / 2, 'wall').setDisplaySize(screenWidth / 3, tileHeight / 2); // left middle wall
+
+      this.add.image(screenWidth - screenWidth / 4, screenHeight / 2, 'wall').setDisplaySize(tileHeight / 2, screenHeight / 2); // left middle wall
+
+
+
+    
 
 
       
@@ -101,8 +121,8 @@ function GameSetup() {
 
     const config = {
         type: Phaser.AUTO,
-        width: 1500,
-        height: 600,
+        width: screenWidth,
+        height: screenHeight,
         scene: Example,
         physics: {
             default: 'arcade',
