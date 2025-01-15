@@ -1,15 +1,16 @@
 import React, { useEffect } from 'react'
 import Phaser from 'phaser'
 
-function App() {
+function GameSetup() {
   var cursors;
   var player;
   class Example extends Phaser.Scene {
     preload () {
       this.load.setBaseURL('/');
-      this.load.image('sky', '../assets/sky.png');
+      this.load.image('background', '../assets/tile.png');
       this.load.image('star', '../assets/star.png');
-      this.load.image('ground', '../assets/platform.png');
+      this.load.image('wall', '../assets/wall.png');
+      // this.load.image('ground', '../assets/platform.png');
       this.load.spritesheet('dude', 
         '../assets/dude.png',
         { frameWidth: 32, frameHeight: 48 }
@@ -18,16 +19,20 @@ function App() {
     
     create () {
       var platforms;
-      this.add.image(400, 300, 'sky');
-      this.add.image(200, 150, 'star');
+      const tileWidth = 48; 
+      const tileHeight = 48; 
 
-      platforms = this.physics.add.staticGroup();
+      for (let y = 0; y < 600; y += tileHeight) {
+          for (let x = 0; x < 1500; x += tileWidth) {
+              this.add.image(x, y, 'background').setOrigin(0, 0); 
+          }
+      }
 
-      platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+      // this.add.image(2 * tileWidth, 0, 'star').setOrigin(0, 0);
+      this.add.image(50,0, 'wall').setDisplaySize(2000, 100);
 
-      platforms.create(600, 400, 'ground');
-      platforms.create(50, 250, 'ground');
-      platforms.create(750, 220, 'ground');
+
+      
 
       // player code
       
@@ -35,7 +40,6 @@ function App() {
 
       player.setBounce(0.2);
       player.setCollideWorldBounds(true);
-      // player.body.setGravityY(200);
 
       this.physics.add.collider(player, platforms);
 
@@ -97,13 +101,13 @@ function App() {
 
     const config = {
         type: Phaser.AUTO,
-        width: 800,
+        width: 1500,
         height: 600,
         scene: Example,
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 200 },
+                gravity: { y: 300 },
                 debug : false
             }
         }
@@ -119,4 +123,4 @@ function App() {
   )
 }
 
-export default App
+export default GameSetup
