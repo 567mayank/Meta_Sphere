@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import GameSetup from './App.jsx'
+import GameSetup from './GameSetup.jsx'
 
 createRoot(document.getElementById('root')).render(
     <GameSetup />
