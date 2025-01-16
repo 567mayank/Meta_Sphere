@@ -42,6 +42,11 @@ function GameSetup() {
       createPlayer(this, player, "char1");
       this.physics.add.collider(player, objects);
 
+      // Debug Physics (optional, for troubleshooting)
+      this.physics.world.createDebugGraphic();
+      this.physics.world.drawDebug = true;  // This will draw debug lines showing the collision shapes
+
+
       cursors = this.input.keyboard.createCursorKeys();
     }
 
