@@ -15,7 +15,7 @@ export function createObjects(scene, screenWidth, screenHeight, tileHeight, obje
   // Sofa and table
   const gap = 170;
   for (let i = 4 * tileHeight; i < screenWidth / 2; i += 4 * tileHeight + gap) {
-    objects.create(i, screenHeight - tileHeight * 1.05 - 30, 'couch2').setDisplaySize(tileHeight * 4, tileHeight).setRotation(-Phaser.Math.DegToRad(180)).refreshBody();
+    objects.create(i, screenHeight - tileHeight * 1.05 - 30, 'couch2').setDisplaySize(tileHeight * 4, tileHeight).refreshBody().setRotation(-Phaser.Math.DegToRad(180));
     objects.create(i, screenHeight - tileHeight * 2.5 - 30, 'table').setDisplaySize(tileHeight * 4, tileHeight).refreshBody();
     objects.create(i, screenHeight - tileHeight * 3.9 - 30, 'couch2').setDisplaySize(tileHeight * 4, tileHeight).refreshBody();
   }

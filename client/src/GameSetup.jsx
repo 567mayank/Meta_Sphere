@@ -37,14 +37,18 @@ function GameSetup() {
       // player part
 
       player = this.physics.add
-        .sprite(1200, 20, "char1")
-        .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7);
+      .sprite(1200, 20, "char1")
+      .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7) 
+      .setSize(tileHeight * 2, tileHeight * 1.3)
+      .setOffset(tileHeight, tileHeight * 4.5)
+      .refreshBody();
+
       createPlayer(this, player, "char1");
       this.physics.add.collider(player, objects);
 
       // Debug Physics (optional, for troubleshooting)
-      this.physics.world.createDebugGraphic();
-      this.physics.world.drawDebug = true;  // This will draw debug lines showing the collision shapes
+      // this.physics.world.createDebugGraphic();
+      // this.physics.world.drawDebug = true;  // This will draw debug lines showing the collision shapes
 
 
       cursors = this.input.keyboard.createCursorKeys();
@@ -52,25 +56,27 @@ function GameSetup() {
 
     update() {
       player.setVelocityX(0);
-      player.setVelocityY(0); 
+      player.setVelocityY(0);
+      
+      const speed = 500
 
       // Horizontal movement (left and right)
       if (cursors.left.isDown) {
-        player.setVelocityX(-160); 
+        player.setVelocityX(-speed); 
         player.setFlipX(true); 
         player.anims.play("left", true); 
       } else if (cursors.right.isDown) {
-        player.setVelocityX(160); 
+        player.setVelocityX(speed); 
         player.setFlipX(false); 
         player.anims.play("right", true); 
       }
 
       // Vertical movement (up and down)
       if (cursors.up.isDown) {
-        player.setVelocityY(-160); 
+        player.setVelocityY(-speed); 
         player.anims.play("up", true); 
       } else if (cursors.down.isDown) {
-        player.setVelocityY(160); 
+        player.setVelocityY(speed); 
         player.anims.play("down", true); 
       }
 
