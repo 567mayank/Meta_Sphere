@@ -6,7 +6,7 @@ function GameSetup() {
   game(1600, 900, 48, 48)
 
   return <div>
-    hi
+    
   </div>;
 }
 

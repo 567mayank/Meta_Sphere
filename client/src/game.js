@@ -48,8 +48,8 @@ function game(screenWidth, screenHeight, tileWidth, tileHeight) {
     }
   }
 
-  const baseWidth = 1600; // Base width for 16:9 ratio
-  const baseHeight = 900; // Base height for 16:9 ratio
+  const baseWidth = 1920; // Base width for 16:9 ratio
+  const baseHeight = 1080; // Base height for 16:9 ratio
 
   const config = {
     type: Phaser.AUTO,
@@ -57,7 +57,7 @@ function game(screenWidth, screenHeight, tileWidth, tileHeight) {
     height: baseHeight,
     scale: {
       mode: Phaser.Scale.FIT, // Fit game within the screen
-      autoCenter: Phaser.Scale.CENTER_BOTH, // Center the game
+      //autoCenter: Phaser.Scale.CENTER_BOTH, // Center the game
     },
     scene: Example,
     physics: {
