@@ -1,13 +1,20 @@
 import React, { useEffect } from "react";
-import game from "./game";
+import Game from "./Components/Game";
+import GameControls from "./Components/GameControls";
 
 function GameSetup() {
 
-  game(1600, 900, 48, 48)
+  // game()
 
-  return <div>
-    
-  </div>;
+  return (
+    <div className="bg-zinc-950 h-screen text-white">
+      <div>
+        Game Room
+      </div>
+      <Game screenWidth={1600} screenHeight={900} tileHeight={48} tileWidth={48}/>
+      {/* <GameControls/> */}
+    </div>
+  )
 }
 
 export default GameSetup;
