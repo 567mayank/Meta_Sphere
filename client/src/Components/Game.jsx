@@ -45,6 +45,17 @@ function Game({screenWidth, screenHeight, tileWidth, tileHeight}) {
         this.physics.add.collider(player, objects);
   
         cursors = this.input.keyboard.createCursorKeys();
+
+        this.input.on('pointerdown', (pointer) => {
+          const targetX = pointer.x;
+          const targetY = pointer.y;
+
+          this.movePlayerTo(player, targetX, targetY);
+        });
+
+
+
+
       }
   
       update() {
@@ -52,6 +63,28 @@ function Game({screenWidth, screenHeight, tileWidth, tileHeight}) {
         setX(player.x)
         setY(player.y)
       }
+
+      movePlayerTo(player, targetX, targetY) {
+        // Start walking animation (assuming you have a walking animation)
+        player.anims.play('walk', true);  // Replace 'walk' with your walking animation key
+    
+        // Create the tween to move the player to the target position
+        this.tweens.add({
+          targets: player,         // The object to tween
+          x: targetX,              // Final x coordinate
+          y: targetY,              // Final y coordinate
+          duration: 2000,          // Duration of the movement (in milliseconds)
+          ease: 'Power2',          // Easing function for smooth movement
+          onComplete: () => {
+            console.log('Movement complete!');
+            player.anims.stop();  // Stop the walking animation when movement is complete
+            // Optionally, play an idle animation or stop the animation
+            player.anims.play('idle', true);
+          }
+        });
+      }
+
+
     }
   
     const baseWidth = 1600; 

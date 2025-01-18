@@ -1,28 +1,42 @@
-import React, { createContext, useContext, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
+import React, { createContext, useContext, useEffect, useMemo } from "react";
+import { io } from "socket.io-client";
 
-const SocketContext = createContext();
+const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-    const socketRef = useRef();
+  const socket = useMemo(
+    () =>
+      io("http://localhost:3000", {
+        reconnection: false,
+        transports: ["websocket"],
+        withCredentials: true,
+      }),
+    []
+  );
 
-    useEffect(() => {
-      
-        socketRef.current = io("http://localhost:3000");
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("User Joined !!!!");
+    });
 
-        return () => {
-            
-            socketRef.current.disconnect();
-        };
-    }, []);
+    socket.on("connect_error", (error) => {
+      console.error("Connection Error: ", error);
+    });
 
-    return (
-        <SocketContext.Provider value={socketRef.current}>
-            {children}
-        </SocketContext.Provider>
-    );
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("disconnect");
+    };
+  }, [socket]);
+
+  return (
+    <SocketContext.Provider value={socket}>
+      {children}
+    </SocketContext.Provider>
+  );
 };
 
 export const useSocket = () => {
-    return useContext(SocketContext);
+  return useContext(SocketContext);
 };

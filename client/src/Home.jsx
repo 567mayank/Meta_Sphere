@@ -1,7 +1,9 @@
 import React from 'react'
 import {Link} from 'react-router-dom'
+import { useSocket } from './SocketContext'
 
 function Home() {
+  const socket = useSocket()
   return (
     <div className='bg-black w-screen h-screen text-white flex flex-col justify-center items-center space-y-6 p-6'>
       
