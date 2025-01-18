@@ -10,6 +10,8 @@ export const SocketProvider = ({ children }) => {
       
         socketRef.current = io("http://localhost:3000");
 
+        
+
         return () => {
             
             socketRef.current.disconnect();
