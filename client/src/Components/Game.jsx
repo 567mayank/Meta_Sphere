@@ -1,12 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Phaser from "phaser";
-import { preloadAssets } from "./preloadAssets";
-import { createObjects } from "./Objects";
-import { createPlayer } from "./character";
-import { createBackground } from "./background";
-import { playerMovement } from "./playerMovement";
+import { preloadAssets } from "../preloadAssets";
+import { createObjects } from "../Objects";
+import { createPlayer } from "../character";
+import { createBackground } from "../background";
+import { playerMovement } from "../playerMovement";
 
 function Game({screenWidth, screenHeight, tileWidth, tileHeight}) {
+  const [posX, setX] = useState(0)
+  const [posY, setY] = useState(0)
   useEffect(() => {
     var objects;
     var cursors;
@@ -33,7 +35,7 @@ function Game({screenWidth, screenHeight, tileWidth, tileHeight}) {
   
         // player part
         player = this.physics.add
-          .sprite(1200, 20, "char1")
+          .sprite(screenWidth / 2, screenHeight, "char1")
           .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7)
           .setSize(tileHeight * 2, tileHeight * 1.3)
           .setOffset(tileHeight, tileHeight * 4.5)
@@ -47,6 +49,8 @@ function Game({screenWidth, screenHeight, tileWidth, tileHeight}) {
   
       update() {
         playerMovement(player, cursors, 500);
+        setX(player.x)
+        setY(player.y)
       }
     }
   
@@ -80,7 +84,10 @@ function Game({screenWidth, screenHeight, tileWidth, tileHeight}) {
   }, [])
 
   return (
-    <div id="game-container" className="border border-black scale-90 flex bg-zinc-800 max-w-fit m-auto"/>
+    <div>
+      <div>{posX} {posY}</div>
+      <div id="game-container" className="border border-black scale-90 flex bg-zinc-800 max-w-fit m-auto"/>
+    </div>
   )
 }
 

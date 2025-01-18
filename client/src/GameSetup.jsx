@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-// import game from "./game";
-import Game from "./Game.jsx";
+import Game from "./Components/Game";
+import GameControls from "./Components/GameControls";
 
 function GameSetup() {
 
@@ -12,9 +12,7 @@ function GameSetup() {
         Game Room
       </div>
       <Game screenWidth={1600} screenHeight={900} tileHeight={48} tileWidth={48}/>
-      <div>
-        Members
-      </div>
+      {/* <GameControls/> */}
     </div>
   )
 }
