@@ -5,7 +5,9 @@ import { SocketProvider } from './SocketContext'
 function Layout() {
   return (
     <SocketProvider>
+      {/* navbar */}
       <Outlet/>
+      {/* footer */}
     </SocketProvider>
   )
 }

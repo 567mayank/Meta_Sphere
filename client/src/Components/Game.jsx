@@ -60,6 +60,7 @@ function Game({screenWidth, screenHeight, tileWidth, tileHeight}) {
   
       update() {
         playerMovement(player, cursors, 500);
+        
         setX(player.x)
         setY(player.y)
       }
