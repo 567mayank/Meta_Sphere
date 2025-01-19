@@ -16,7 +16,8 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     socket.on("connect", () => {
-      console.log("User Joined !!!!");
+      console.log("User Joined !!!!" + socket.id);
+      socket.emit("newDeviceAdded", { socketId: socket.id });
     });
 
     socket.on("connect_error", (error) => {
@@ -31,9 +32,7 @@ export const SocketProvider = ({ children }) => {
   }, [socket]);
 
   return (
-    <SocketContext.Provider value={socket}>
-      {children}
-    </SocketContext.Provider>
+    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
   );
 };
 

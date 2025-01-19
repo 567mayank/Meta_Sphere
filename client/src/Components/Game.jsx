@@ -1,166 +1,19 @@
-// import React, { useEffect, useState } from "react";
-// import Phaser from "phaser";
-// import { preloadAssets } from "../preloadAssets";
-// import { createObjects } from "../Objects";
-// import { createPlayer } from "../character";
-// import { createBackground } from "../background";
-// import { playerMovement } from "../playerMovement";
-// import { sendCoordinates } from "../CoordinateManager";
-
-// function Game({screenWidth, screenHeight, tileWidth, tileHeight}) {
-//   const [posX, setX] = useState(0)
-//   const [posY, setY] = useState(0)
-//   useEffect(() => {
-//     var objects;
-//     var cursors;
-//     var player;
-  
-//     class Example extends Phaser.Scene {
-//       preload() {
-//         preloadAssets(this);
-//       }
-  
-//       create() {
-//         createBackground(
-//           this,
-//           screenWidth,
-//           screenHeight,
-//           tileWidth,
-//           tileHeight,
-//           "background"
-//         );
-  
-//         // objects i.e. walls, table, chair, couch
-//         objects = this.physics.add.staticGroup();
-//         createObjects(this, screenWidth, screenHeight, tileHeight, objects);
-  
-//         // player part
-//         player = this.physics.add
-//           .sprite(screenWidth / 2, screenHeight, "char1")
-//           .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7)
-//           .setSize(tileHeight * 2, tileHeight * 1.3)
-//           .setOffset(tileHeight, tileHeight * 4.5)
-//           .refreshBody();
-  
-//         createPlayer(this, player, "char1");
-//         this.physics.add.collider(player, objects);
-  
-//         cursors = this.input.keyboard.createCursorKeys();
-
-//         this.input.on('pointerdown', (pointer) => {
-//           const targetX = pointer.x;
-//           const targetY = pointer.y;
-
-//           this.movePlayerTo(player, targetX, targetY);
-//         });
-
-
-
-
-//       }
-  
-//       update() {
-//         playerMovement(player, cursors, 500);
-//         const message = {
-//           socketId : Socket.id,
-//           xCoordinate : player.x,
-//           yCoordinate : player.y
-//         }
-
-//         sendCoordinates(message);
-//         setX(player.x)
-//         setY(player.y)
-//       }
-
-//       movePlayerTo(player, targetX, targetY) {
-//         // Start walking animation (assuming you have a walking animation)
-//         player.anims.play('walk', true);  // Replace 'walk' with your walking animation key
-    
-//         // Create the tween to move the player to the target position
-//         this.tweens.add({
-//           targets: player,         // The object to tween
-//           x: targetX,              // Final x coordinate
-//           y: targetY,              // Final y coordinate
-//           duration: 2000,          // Duration of the movement (in milliseconds)
-//           ease: 'Power2',          // Easing function for smooth movement
-//           onComplete: () => {
-//             console.log('Movement complete!');
-//             player.anims.stop();  // Stop the walking animation when movement is complete
-//             // Optionally, play an idle animation or stop the animation
-//             player.anims.play('idle', true);
-//           }
-//         });
-//       }
-
-
-//     }
-  
-//     const baseWidth = 1600; 
-//     const baseHeight = 900; 
-  
-//     const config = {
-//       type: Phaser.AUTO,
-//       width: baseWidth,
-//       height: baseHeight,
-//       scale: {
-//         mode: Phaser.Scale.FIT,
-//       },
-//       scene: Example,
-//       parent: "game-container",
-//       physics: {
-//         default: "arcade",
-//         arcade: {
-//           gravity: { y: 0 },
-//           debug: false,
-//         },
-//       },
-//     };
-  
-//     const phaserGame = new Phaser.Game(config);
-        
-//     return () => {
-//       // Cleanup the Phaser game when the component unmounts
-//       phaserGame.destroy(true);
-//     };
-//   }, [])
-
-//   return (
-//     <div>
-//       <div>{posX} {posY}</div>
-//       <div id="game-container" className="border border-black scale-90 flex bg-zinc-800 max-w-fit m-auto"/>
-//     </div>
-//   )
-// }
-
-// export default Game;
 import React, { useEffect, useState } from "react";
 import Phaser from "phaser";
-import CoordinateManager from "../CoordinateManager";
 import { preloadAssets } from "../preloadAssets";
 import { createObjects } from "../Objects";
 import { createPlayer } from "../character";
 import { createBackground } from "../background";
 import { playerMovement } from "../playerMovement";
+import { useSocket } from "../SocketContext";
 
 function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
-  const [posX, setX] = useState(0);
-  const [posY, setY] = useState(0);
-  const [otherPlayers, setOtherPlayers] = useState({});
+  const [posX, setX] = useState(screenWidth / 2);
+  const [posY, setY] = useState(screenHeight);
+  const socket = useSocket();
+  const [players, setPlayers] = useState({});
+  const [phaserGame, setPhaserGame] = useState(null);
 
-  const handleUpdate = (data) => {
-    if (data.x !== null && data.y !== null) {
-      setOtherPlayers((prev) => ({
-        ...prev,
-        [data.id]: { x: data.x, y: data.y },
-      }));
-    } else {
-      setOtherPlayers((prev) => {
-        const updatedPlayers = { ...prev };
-        delete updatedPlayers[data.id];
-        return updatedPlayers;
-      });
-    }
-  };
 
   useEffect(() => {
     let objects, cursors, player;
@@ -194,6 +47,59 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         this.physics.add.collider(player, objects);
 
         cursors = this.input.keyboard.createCursorKeys();
+
+        // for spawning of new player on board
+        socket.on("newDeviceUpdate", (msg) => {
+          // console.log("new player coming");
+          const newPlayer = this.createSecondPlayer();
+          setPlayers((prev) => ({
+            ...prev,
+            [msg]: newPlayer,
+          }));
+        });
+
+
+        // run this function only one time when player gets live
+        socket.on("infoOfLivePlayers", (msg) => {
+          msg.map((player) => {
+            const newPlayer = this.createSecondPlayer(
+              player.x,
+              player.y,
+              "char1"
+            );
+
+            setPlayers((prev) => ({
+              ...prev,
+              [player.socketId]: newPlayer, 
+            }));
+          });
+
+          console.log(msg)
+
+
+          
+        });
+
+        socket.emit("creation-complete" , "done");
+
+      }
+
+      // function for adding new player
+      createSecondPlayer(
+        charHeight = screenHeight / 2,
+        charWidth = screenWidth * Math.random(),
+        charName = "char1"
+      ) {
+        // Create the second player
+        const secondPlayer = this.physics.add
+          .sprite(charWidth, charHeight, charName)
+          .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7)
+          .setSize(tileHeight * 2, tileHeight * 1.3)
+          .setOffset(tileHeight, tileHeight * 4.5)
+          .refreshBody();
+
+        this.physics.add.collider(secondPlayer, objects);
+        return secondPlayer;
       }
 
       update() {
@@ -222,21 +128,23 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
       },
     };
 
-    const phaserGame = new Phaser.Game(config);
+    const phaserGameInstance = new Phaser.Game(config);
+    setPhaserGame(phaserGameInstance); // Save the Phaser game instance
 
     return () => {
-      phaserGame.destroy(true);
+      phaserGameInstance.destroy(true);
     };
   }, []);
 
   return (
     <div>
-      <CoordinateManager
-        coordinates={{ x: posX, y: posY }}
-        onUpdate={handleUpdate}
+      <div>
+        {posX} {posY}
+      </div>
+      <div
+        id="game-container"
+        className="border border-black scale-90 flex bg-zinc-800 max-w-fit m-auto"
       />
-      <div>{posX} {posY}</div>
-      <div id="game-container" className="border border-black scale-90 flex bg-zinc-800 max-w-fit m-auto" />
     </div>
   );
 }
