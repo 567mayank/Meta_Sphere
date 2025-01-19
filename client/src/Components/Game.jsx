@@ -60,6 +60,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
 
         // run this function only one time when player gets live
         socket.on("infoOfLivePlayers", (msg) => {
+          console.log("message recieved : " + msg)
           msg.map((player) => {
             const newPlayer = this.createSecondPlayer(
               player.x,
