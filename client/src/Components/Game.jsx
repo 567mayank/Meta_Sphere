@@ -11,12 +11,16 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
   const [posX, setX] = useState(screenWidth / 2);
   const [posY, setY] = useState(screenHeight);
   const socket = useSocket();
-  const [players, setPlayers] = useState({});
+  // const [players, setPlayers] = useState({});
   const [phaserGame, setPhaserGame] = useState(null);
 
+  useEffect(() => {
+    socket.emit("sprite-move", { x: posX, y: posY });
+  }, [posX, posY]);
 
   useEffect(() => {
     let objects, cursors, player;
+    let players = new Map();
 
     class Example extends Phaser.Scene {
       preload() {
@@ -50,14 +54,9 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
 
         // for spawning of new player on board
         socket.on("newDeviceUpdate", (msg) => {
-          // console.log("new player coming");
           const newPlayer = this.createSecondPlayer();
-          setPlayers((prev) => ({
-            ...prev,
-            [msg]: newPlayer,
-          }));
+          players.set(msg, newPlayer);
         });
-
 
         // run this function only one time when player gets live
         socket.on("infoOfLivePlayers", (msg) => {
@@ -68,20 +67,16 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
               "char1"
             );
 
-            setPlayers((prev) => ({
-              ...prev,
-              [player.socketId]: newPlayer, 
-            }));
+            this.movePlayerTo(newPlayer, player.x, player.y);
+            players.set(player.id, newPlayer);
           });
-
-          console.log(msg)
-
-
-          
         });
+        // calling this function to inform server about completeion of creation of scene just one time
+        socket.emit("creation-complete", "done");
 
-        socket.emit("creation-complete" , "done");
-
+        socket.on("sprite-update", (msg) => {
+          this.movePlayerTo(players.get(msg.id), msg.x, msg.y);
+        });
       }
 
       // function for adding new player
@@ -91,6 +86,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         charName = "char1"
       ) {
         // Create the second player
+        // console.log(charWidth, charHeight)
         const secondPlayer = this.physics.add
           .sprite(charWidth, charHeight, charName)
           .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7)
@@ -102,9 +98,29 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         return secondPlayer;
       }
 
+      // function for moving player to target position
+      movePlayerTo(player, targetX, targetY) {
+        // Start walking animation (assuming you have a walking animation)
+        // player.anims.play("walk", true); // Replace 'walk' with your walking animation key
+
+        // Create the tween to move the player to the target position
+        this.tweens.add({
+          targets: player, // The object to tween
+          x: targetX, // Final x coordinate
+          y: targetY, // Final y coordinate
+          duration: 1000, // Duration of the movement (in milliseconds)
+          ease: "Power2", // Easing function for smooth movement
+          onComplete: () => {
+            // console.log("Movement complete!");
+            // player.anims.stop(); // Stop the walking animation when movement is complete
+            // Optionally, play an idle animation or stop the animation
+            // player.anims.play("idle", true);
+          },
+        });
+      }
+
       update() {
         playerMovement(player, cursors, 500);
-
         setX(player.x);
         setY(player.y);
       }
