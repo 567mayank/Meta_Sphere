@@ -6,7 +6,7 @@ export function preloadAssets(scene) {
   scene.load.image('couch', '../assets/couch.PNG');
   scene.load.image('couch2', '../assets/couch2.PNG');
   scene.load.image('clock', '../assets/clock.PNG');
-  scene.load.image('table', '../assets/table.png');
+  scene.load.image('table', '../assets/table.PNG');
   scene.load.image('table2', '../assets/studyTable.png');
   scene.load.image('chair', '../assets/chair.png');
   scene.load.image('pool', '../assets/pool.png');
