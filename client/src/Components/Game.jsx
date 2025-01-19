@@ -11,31 +11,9 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
   const [posX, setX] = useState(screenWidth / 2);
   const [posY, setY] = useState(screenHeight);
   const socket = useSocket();
-  const [totalPlayers, setTotalPlayers] = useState([]);
+  const [players, setPlayers] = useState({});
   const [phaserGame, setPhaserGame] = useState(null);
 
-  useEffect(() => {
-    if (socket) {
-      // updating other players
-      socket.emit("sprite-move", { x: posX, y: posY });
-
-      // updates from other players
-      socket.on("sprite-update", (data) => {
-        console.log(data);
-      });
-
-      socket.on("newDeviceUpdate", (msg) => {
-        setTotalPlayers((prev) => {
-          const updatedPlayers = new Set([...prev, msg.socketId]);
-          return Array.from(updatedPlayers);
-        });
-      });
-
-      return () => {
-        socket.off("sprite-update");
-      };
-    }
-  }, []);
 
   useEffect(() => {
     let objects, cursors, player;
@@ -70,23 +48,58 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
 
         cursors = this.input.keyboard.createCursorKeys();
 
+        // for spawning of new player on board
         socket.on("newDeviceUpdate", (msg) => {
-          console.log("new player coming")
-          this.createSecondPlayer()
+          // console.log("new player coming");
+          const newPlayer = this.createSecondPlayer();
+          setPlayers((prev) => ({
+            ...prev,
+            [msg]: newPlayer,
+          }));
         });
+
+
+        // run this function only one time when player gets live
+        socket.on("infoOfLivePlayers", (msg) => {
+          msg.map((player) => {
+            const newPlayer = this.createSecondPlayer(
+              player.x,
+              player.y,
+              "char1"
+            );
+
+            setPlayers((prev) => ({
+              ...prev,
+              [player.socketId]: newPlayer, 
+            }));
+          });
+
+          console.log(msg)
+
+
+          
+        });
+
+        socket.emit("creation-complete" , "done");
 
       }
 
-      createSecondPlayer() {
+      // function for adding new player
+      createSecondPlayer(
+        charHeight = screenHeight / 2,
+        charWidth = screenWidth * Math.random(),
+        charName = "char1"
+      ) {
         // Create the second player
         const secondPlayer = this.physics.add
-          .sprite(screenWidth * Math.random(), screenHeight / 2, "char1")
+          .sprite(charWidth, charHeight, charName)
           .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7)
           .setSize(tileHeight * 2, tileHeight * 1.3)
           .setOffset(tileHeight, tileHeight * 4.5)
           .refreshBody();
 
         this.physics.add.collider(secondPlayer, objects);
+        return secondPlayer;
       }
 
       update() {
@@ -123,10 +136,6 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
     };
   }, []);
 
-  const createSecondPlayerExternally = () => {
-    
-  };
-
   return (
     <div>
       <div>
@@ -136,7 +145,6 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         id="game-container"
         className="border border-black scale-90 flex bg-zinc-800 max-w-fit m-auto"
       />
-      <button onClick={createSecondPlayerExternally}>Create Second Player</button>
     </div>
   );
 }
