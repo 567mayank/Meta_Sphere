@@ -74,19 +74,23 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         // calling this function to inform server about completeion of creation of scene just one time
         socket.emit("creation-complete", "done");
 
+        // for updating other players position
         socket.on("sprite-update", (msg) => {
           this.movePlayerTo(players.get(msg.id), msg.x, msg.y);
         });
+
+        socket.on('sprite-disconnect', (msg) => {
+          this.deletePlayer(players.get(msg.id))
+          players.delete(msg.id)
+        })
       }
 
       // function for adding new player
       createSecondPlayer(
         charHeight = screenHeight / 2,
-        charWidth = screenWidth * Math.random(),
+        charWidth = screenWidth,
         charName = "char1"
       ) {
-        // Create the second player
-        // console.log(charWidth, charHeight)
         const secondPlayer = this.physics.add
           .sprite(charWidth, charHeight, charName)
           .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7)
@@ -98,8 +102,15 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         return secondPlayer;
       }
 
+      // function for removing player
+      deletePlayer(player) {
+        if (player) {
+          player.destroy();  
+        }
+      }
+
       // function for moving player to target position
-      movePlayerTo(player, targetX, targetY) {
+      movePlayerTo(player, targetX, targetY, speed = 1000) {
         // Start walking animation (assuming you have a walking animation)
         // player.anims.play("walk", true); // Replace 'walk' with your walking animation key
 
@@ -108,7 +119,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
           targets: player, // The object to tween
           x: targetX, // Final x coordinate
           y: targetY, // Final y coordinate
-          duration: 1000, // Duration of the movement (in milliseconds)
+          duration: speed, // Duration of the movement (in milliseconds)
           ease: "Power2", // Easing function for smooth movement
           onComplete: () => {
             // console.log("Movement complete!");
