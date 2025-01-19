@@ -55,6 +55,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         // for spawning of new player on board
         socket.on("newDeviceUpdate", (msg) => {
           const newPlayer = this.createSecondPlayer();
+          // createPlayer(this, newPlayer, "char1");
           players.set(msg, newPlayer);
         });
 
@@ -76,13 +77,23 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
 
         // for updating other players position
         socket.on("sprite-update", (msg) => {
-          this.movePlayerTo(players.get(msg.id), msg.x, msg.y);
+          let x = (players.get(msg.id))?.x;
+          let y = (players.get(msg.id))?.y;
+          if (msg.x > x) 
+            this.movePlayerTo(players.get(msg.id), msg.x, msg.y, 'right');
+          else if (msg.x < x)
+            this.movePlayerTo(players.get(msg.id), msg.x, msg.y, 'left');
+          else if (msg.y > y)
+            this.movePlayerTo(players.get(msg.id), msg.x, msg.y, 'down');
+          else 
+            this.movePlayerTo(players.get(msg.id), msg.x, msg.y, 'up');
         });
 
-        socket.on('sprite-disconnect', (msg) => {
-          this.deletePlayer(players.get(msg.id))
-          players.delete(msg.id)
-        })
+        // for deleting player on disconnect
+        socket.on("sprite-disconnect", (msg) => {
+          this.deletePlayer(players.get(msg.id));
+          players.delete(msg.id);
+        });
       }
 
       // function for adding new player
@@ -105,33 +116,37 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
       // function for removing player
       deletePlayer(player) {
         if (player) {
-          player.destroy();  
+          player.destroy();
         }
       }
 
       // function for moving player to target position
-      movePlayerTo(player, targetX, targetY, speed = 1000) {
+      movePlayerTo(player, targetX, targetY, animation, speed = 1000) {
         // Start walking animation (assuming you have a walking animation)
-        // player.anims.play("walk", true); // Replace 'walk' with your walking animation key
+        if (animation === 'left') 
+          player.setFlipX(true); 
+        player?.anims?.play(String(animation), true); // Replace 'walk' with your walking animation key
 
         // Create the tween to move the player to the target position
         this.tweens.add({
-          targets: player, // The object to tween
-          x: targetX, // Final x coordinate
-          y: targetY, // Final y coordinate
-          duration: speed, // Duration of the movement (in milliseconds)
-          ease: "Power2", // Easing function for smooth movement
+          targets: player,
+          x: targetX,
+          y: targetY,
+          duration: speed,
+          ease: "Power2",
           onComplete: () => {
             // console.log("Movement complete!");
             // player.anims.stop(); // Stop the walking animation when movement is complete
             // Optionally, play an idle animation or stop the animation
-            // player.anims.play("idle", true);
+            player?.anims?.play("turn", true);
+            if (animation === 'left') 
+              player.setFlipX(false); 
           },
         });
       }
 
       update() {
-        playerMovement(player, cursors, 500);
+        playerMovement(player, cursors, 70);
         setX(player.x);
         setY(player.y);
       }
@@ -156,7 +171,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
     };
 
     const phaserGameInstance = new Phaser.Game(config);
-    setPhaserGame(phaserGameInstance); // Save the Phaser game instance
+    setPhaserGame(phaserGameInstance);
 
     return () => {
       phaserGameInstance.destroy(true);

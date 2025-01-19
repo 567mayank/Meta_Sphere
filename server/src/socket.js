@@ -3,7 +3,7 @@ export function setupSocket(io) {
 
   io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
-    players[socket.id] = { x: 0, y: 0 };
+    players[socket.id] = { x: 800, y: 852 };
 
 
     socket.on("sprite-move", (data) => {
