@@ -25,7 +25,6 @@ const CoordinateManager = ({ coordinates, onUpdate }) => {
         }
     }, [socket, coordinates, onUpdate]);
 
-    return null; 
 };
 
 export default CoordinateManager;

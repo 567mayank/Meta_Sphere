@@ -17,11 +17,13 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     socket.on("connect", () => {
       console.log("User Joined !!!!");
+      socket.emit('newDeviceAdded', {socketId : socket.id})
     });
 
     socket.on("connect_error", (error) => {
       console.error("Connection Error: ", error);
     });
+
 
     return () => {
       socket.off("connect");
