@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from "react";
 import Phaser from "phaser";
-import { preloadAssets } from "../preloadAssets";
-import { createObjects } from "../Objects";
-import { createPlayer } from "../character";
-import { createBackground } from "../background";
-import { playerMovement } from "../playerMovement";
+import { preloadAssets } from "../UtilitiesFunction/preloadAssets";
+import { createObjects } from "../UtilitiesFunction/objects";
+import { createPlayer } from "../UtilitiesFunction/character";
+import { createBackground } from "../UtilitiesFunction/background";
+import { playerMovement } from "../UtilitiesFunction/playerMovement";
 import { useSocket } from "../SocketContext";
+import {
+  deletePlayer,
+  movePlayerTo,
+} from "../UtilitiesFunction/multiPlayerFunctions";
 
 function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
   const [posX, setX] = useState(screenWidth / 2);
   const [posY, setY] = useState(screenHeight);
   const socket = useSocket();
-  // const [players, setPlayers] = useState({});
   const [phaserGame, setPhaserGame] = useState(null);
 
   useEffect(() => {
@@ -40,12 +43,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         objects = this.physics.add.staticGroup();
         createObjects(this, screenWidth, screenHeight, tileHeight, objects);
 
-        player = this.physics.add
-          .sprite(screenWidth / 2, screenHeight, "char1")
-          .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7)
-          .setSize(tileHeight * 2, tileHeight * 1.3)
-          .setOffset(tileHeight, tileHeight * 4.5)
-          .refreshBody();
+        player = this.createSecondPlayer();
 
         createPlayer(this, player, "char1");
         this.physics.add.collider(player, objects);
@@ -55,51 +53,56 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         // for spawning of new player on board
         socket.on("newDeviceUpdate", (msg) => {
           const newPlayer = this.createSecondPlayer();
-          // createPlayer(this, newPlayer, "char1");
           players.set(msg, newPlayer);
         });
 
-        // run this function only one time when player gets live
+        // for updating live players
         socket.on("infoOfLivePlayers", (msg) => {
-          msg.map((player) => {
+          msg.map((playerData) => {
             const newPlayer = this.createSecondPlayer(
-              player.x,
-              player.y,
+              playerData.x,
+              playerData.y,
               "char1"
             );
 
-            this.movePlayerTo(newPlayer, player.x, player.y);
-            players.set(player.id, newPlayer);
+            movePlayerTo(newPlayer, playerData.x, playerData.y, "turn", this);
+            players.set(playerData.id, newPlayer);
           });
         });
-        // calling this function to inform server about completeion of creation of scene just one time
+
+        // Notify server of scene creation
         socket.emit("creation-complete", "done");
 
-        // for updating other players position
+        // For updating other players' positions
         socket.on("sprite-update", (msg) => {
-          let x = (players.get(msg.id))?.x;
-          let y = (players.get(msg.id))?.y;
-          if (msg.x > x) 
-            this.movePlayerTo(players.get(msg.id), msg.x, msg.y, 'right');
-          else if (msg.x < x)
-            this.movePlayerTo(players.get(msg.id), msg.x, msg.y, 'left');
-          else if (msg.y > y)
-            this.movePlayerTo(players.get(msg.id), msg.x, msg.y, 'down');
-          else 
-            this.movePlayerTo(players.get(msg.id), msg.x, msg.y, 'up');
+          const otherPlayer = players.get(msg.id);
+          if (otherPlayer) {
+            let x = otherPlayer.x;
+            let y = otherPlayer.y;
+            if (msg.x > x)
+              movePlayerTo(otherPlayer, msg.x, msg.y, "right", this);
+            else if (msg.x < x)
+              movePlayerTo(otherPlayer, msg.x, msg.y, "left", this);
+            else if (msg.y > y)
+              movePlayerTo(otherPlayer, msg.x, msg.y, "down", this);
+            else movePlayerTo(otherPlayer, msg.x, msg.y, "up", this);
+          }
         });
 
-        // for deleting player on disconnect
+        // Handle player disconnect
         socket.on("sprite-disconnect", (msg) => {
-          this.deletePlayer(players.get(msg.id));
-          players.delete(msg.id);
+          const playerToRemove = players.get(msg.id);
+          if (playerToRemove) {
+            deletePlayer(playerToRemove);
+            players.delete(msg.id);
+          }
         });
       }
 
-      // function for adding new player
+      // Create a new player with a name above their head
       createSecondPlayer(
-        charHeight = screenHeight / 2,
-        charWidth = screenWidth,
+        charHeight = screenHeight,
+        charWidth = screenWidth / 2,
         charName = "char1"
       ) {
         const secondPlayer = this.physics.add
@@ -109,49 +112,40 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
           .setOffset(tileHeight, tileHeight * 4.5)
           .refreshBody();
 
+        const playerNameText = this.add
+          .text(charWidth, charHeight - tileHeight, " " + charName + " ", {
+            font: "16px Arial",
+            fill: "#000000",
+            align: "center",
+            backgroundColor: "#ffffff",
+          })
+          .setOrigin(0.5, 0.5);
+
+        secondPlayer.playerNameText = playerNameText;
+
         this.physics.add.collider(secondPlayer, objects);
         return secondPlayer;
       }
 
-      // function for removing player
-      deletePlayer(player) {
-        if (player) {
-          player.destroy();
-        }
-      }
-
-      // function for moving player to target position
-      movePlayerTo(player, targetX, targetY, animation, speed = 1000) {
-        // Start walking animation (assuming you have a walking animation)
-        if (animation === 'left') 
-          player.setFlipX(true); 
-        player?.anims?.play(String(animation), true); // Replace 'walk' with your walking animation key
-
-        // Create the tween to move the player to the target position
-        this.tweens.add({
-          targets: player,
-          x: targetX,
-          y: targetY,
-          duration: speed,
-          ease: "Power2",
-          onComplete: () => {
-            // console.log("Movement complete!");
-            // player.anims.stop(); // Stop the walking animation when movement is complete
-            // Optionally, play an idle animation or stop the animation
-            player?.anims?.play("turn", true);
-            if (animation === 'left') 
-              player.setFlipX(false); 
-          },
-        });
-      }
-
       update() {
+        // Update player movement
         playerMovement(player, cursors, 70);
         setX(player.x);
         setY(player.y);
+
+        player.playerNameText.setPosition(player.x, player.y - tileHeight);
+
+        // Update the positions of all players' name text
+        players.forEach((playerSprite, id) => {
+          playerSprite.playerNameText.setPosition(
+            playerSprite.x,
+            playerSprite.y - tileHeight
+          );
+        });
       }
     }
 
+    // Phaser game configuration
     const config = {
       type: Phaser.AUTO,
       width: 1600,
@@ -185,7 +179,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
       </div>
       <div
         id="game-container"
-        className="border border-black scale-90 flex bg-zinc-800 max-w-fit m-auto"
+        className="border-4 border-red-400 scale-90 flex bg-zinc-800 max-w-fit m-auto rounded-md"
       />
     </div>
   );
