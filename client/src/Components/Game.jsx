@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import {useNavigate} from 'react-router-dom'
 import Phaser from "phaser";
 import { preloadAssets } from "../UtilitiesFunction/preloadAssets";
 import { createObjects } from "../UtilitiesFunction/objects";
@@ -11,14 +12,20 @@ import {
   movePlayerTo,
 } from "../UtilitiesFunction/multiPlayerFunctions";
 
-function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
+function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId }) {
   const [posX, setX] = useState(screenWidth / 2);
   const [posY, setY] = useState(screenHeight);
   const socket = useSocket();
+  const navigate = useNavigate()
   const [phaserGame, setPhaserGame] = useState(null);
 
   useEffect(() => {
-    socket.emit("sprite-move", { x: posX, y: posY });
+    socket.emit("sprite-move", { x: posX, y: posY, roomId });
+    socket.on('error', (msg) => {
+      alert(msg)
+      navigate("/")
+      return
+    })
   }, [posX, posY]);
 
   useEffect(() => {
@@ -71,7 +78,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight }) {
         });
 
         // Notify server of scene creation
-        socket.emit("creation-complete", "done");
+        socket.emit("creation-complete", {roomId});
 
         // For updating other players' positions
         socket.on("sprite-update", (msg) => {
