@@ -4,11 +4,16 @@ import { useSocket } from "./SocketContext";
 
 function Home() {
   const [roomId, setRoomId] = useState("");
+  const [name, setName] = useState("");
   const socket = useSocket();
   const navigate = useNavigate();
   const handleJoin = () => {
+    if (!name.trim()) {
+      alert("Enter a Name");
+      return;
+    }
     if (roomId.trim()) {
-      socket.emit("join-room", { roomId });
+      socket.emit("join-room", { roomId, name });
 
       socket.once("error", (msg) => {
         alert(msg);
@@ -17,7 +22,7 @@ function Home() {
       });
 
       socket.once("room-joined", (msg) => {
-        navigate(`/game/${roomId}`);
+        navigate(`/game/${roomId}/${name}`);
       });
     } else {
       alert("Enter Valid Room id");
@@ -25,8 +30,12 @@ function Home() {
   };
 
   const handleNewRoom = () => {
+    if (!name.trim()) {
+      alert("Enter a Name");
+      return;
+    }
     if (roomId.trim()) {
-      socket.emit("create-room", { roomId });
+      socket.emit("create-room", { roomId, name });
 
       socket.once("error", (msg) => {
         alert(msg);
@@ -35,7 +44,7 @@ function Home() {
       });
 
       socket.once("room-created", (msg) => {
-        navigate(`/game/${roomId}`);
+        navigate(`/game/${roomId}/${name}`);
       });
     } else {
       alert("Enter Valid Room id");
@@ -55,14 +64,29 @@ function Home() {
         Get Along with people while having some fun
       </div>
 
-      <div className="flex flex-col items-center space-y-4 mt-6">
-        <div className="flex items-center space-x-3">
+      <div className="flex flex-col w-1/4 gap-6 mt-6">
+        {/* First row: Name and Room Code */}
+        <div className="flex justify-between items-center space-x-4">
+          <label htmlFor="room-name" className="font-medium">
+            Name
+          </label>
+          <input
+            id="room-name"
+            type="text"
+            placeholder="Pick a Name"
+            className="p-2 rounded-lg text-black"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+
+        <div className="flex justify-between items-center space-x-4">
           <label htmlFor="room-code" className="font-medium">
             Room Code
           </label>
           <input
             id="room-code"
-            type="Text"
+            type="text"
             placeholder="Enter Room Code"
             className="p-2 rounded-lg text-black"
             value={roomId}
@@ -70,16 +94,17 @@ function Home() {
           />
         </div>
 
-        <div className="flex space-x-4">
+        {/* Second row: Join and Create New Room buttons */}
+        <div className="flex justify-between gap-x-5">
           <button
             onClick={handleJoin}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className=" w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
           >
-            Join
+            Join Room
           </button>
           <button
             onClick={handleNewRoom}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+            className=" w-1/2 bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
           >
             Create New Room
           </button>

@@ -5,36 +5,36 @@ export function setupSocket(io) {
     console.log("A user connected:", socket.id);
 
     // for creating new room
-    socket.on("create-room", ({roomId}) => {
+    socket.on("create-room", ({roomId, name}) => {
       if (map.has(roomId)) {
         io.to(socket.id).emit("error", "Room Id Already Exist");
         return;
       }
       socket.join(roomId);
       map.set(roomId, []);
-      map.get(roomId)[socket.id] = { x: 800, y: 852 };
+      map.get(roomId)[socket.id] = { x: 800, y: 852, name };
       io.to(socket.id).emit(
         "room-created",
         `Room ${roomId} created successfully.`
       );
 
-      socket.to(roomId).emit('newDeviceUpdate', socket.id)
+      socket.to(roomId).emit('newDeviceUpdate', {socketId : socket.id, name})
     });
 
     // for joining old room
-    socket.on("join-room", ({ roomId }) => {
+    socket.on("join-room", ({ roomId, name }) => {
       if (map.has(roomId) === false) {
         io.to(socket.id).emit("error", "Room Id Doesn't Exist");
         return;
       }
       socket.join(roomId);
-      map.get(roomId)[socket.id] = { x: 800, y: 852 };
+      map.get(roomId)[socket.id] = { x: 800, y: 852, name };
       io.to(socket.id).emit(
         "room-joined",
         `Room ${roomId} joined successfully.`
       );
 
-      socket.to(roomId).emit('newDeviceUpdate', socket.id)
+      socket.to(roomId).emit('newDeviceUpdate', {socketId : socket.id, name})
     });
 
     // for tracking movement
@@ -59,6 +59,7 @@ export function setupSocket(io) {
           id: id,
           x: map.get(roomId)[id].x,
           y: map.get(roomId)[id].y,
+          name : map.get(roomId)[id].name
         }))
         .filter((playerObj) => playerObj.id !== socket.id);
 

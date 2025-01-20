@@ -12,7 +12,7 @@ import {
   movePlayerTo,
 } from "../UtilitiesFunction/multiPlayerFunctions";
 
-function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId }) {
+function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }) {
   const [posX, setX] = useState(screenWidth / 2);
   const [posY, setY] = useState(screenHeight);
   const socket = useSocket();
@@ -20,7 +20,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId }) {
   const [phaserGame, setPhaserGame] = useState(null);
 
   useEffect(() => {
-    socket.emit("sprite-move", { x: posX, y: posY, roomId });
+    socket.emit("sprite-move", { x: posX, y: posY, roomId, name });
     socket.on('error', (msg) => {
       alert(msg)
       navigate("/")
@@ -50,7 +50,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId }) {
         objects = this.physics.add.staticGroup();
         createObjects(this, screenWidth, screenHeight, tileHeight, objects);
 
-        player = this.createSecondPlayer();
+        player = this.createSecondPlayer(name);
 
         createPlayer(this, player, "char1");
         this.physics.add.collider(player, objects);
@@ -58,20 +58,20 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId }) {
         cursors = this.input.keyboard.createCursorKeys();
 
         // for spawning of new player on board
-        socket.on("newDeviceUpdate", (msg) => {
-          const newPlayer = this.createSecondPlayer();
-          players.set(msg, newPlayer);
+        socket.on("newDeviceUpdate", ({socketId, name}) => {
+          const newPlayer = this.createSecondPlayer(name);
+          players.set(socketId, newPlayer);
         });
 
         // for updating live players
         socket.on("infoOfLivePlayers", (msg) => {
           msg.map((playerData) => {
             const newPlayer = this.createSecondPlayer(
+              playerData.name,
               playerData.x,
               playerData.y,
               "char1"
             );
-
             movePlayerTo(newPlayer, playerData.x, playerData.y, "turn", this);
             players.set(playerData.id, newPlayer);
           });
@@ -108,6 +108,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId }) {
 
       // Create a new player with a name above their head
       createSecondPlayer(
+        playerName = "char1",
         charHeight = screenHeight,
         charWidth = screenWidth / 2,
         charName = "char1"
@@ -120,7 +121,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId }) {
           .refreshBody();
 
         const playerNameText = this.add
-          .text(charWidth, charHeight - tileHeight, " " + charName + " ", {
+          .text(charWidth, charHeight - tileHeight, " " + playerName + " ", {
             font: "16px Arial",
             fill: "#000000",
             align: "center",
