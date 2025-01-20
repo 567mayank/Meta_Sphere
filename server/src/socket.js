@@ -39,98 +39,91 @@
 
 // socket.js
 export function setupSocket(io) {
-  let players = {}; // Key: roomId, Value: { socketId: { x, y } }
+  let map = new Map();
 
   io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
 
-    // Event: Create a new room
-    socket.on("create-room", ({ roomId }) => {
-      socket.join(roomId); // Join the newly created room
-      if (!players[roomId]) {
-        players[roomId] = {};
+    // for creating new room
+    socket.on("create-room", ({roomId}) => {
+      if (map.has(roomId)) {
+        io.to(socket.id).emit("error", "Room Id Already Exist");
+        return;
       }
-      players[roomId][socket.id] = { x: 0, y: 0 }; // Initialize player's position
-      console.log(`Room created: ${roomId} by ${socket.id}`);
+      socket.join(roomId);
+      map.set(roomId, []);
+      map.get(roomId)[socket.id] = { x: 800, y: 852 };
+      io.to(socket.id).emit(
+        "room-created",
+        `Room ${roomId} created successfully.`
+      );
+
+      socket.to(roomId).emit('newDeviceUpdate', socket.id)
     });
 
-
-    socket.on("newDeviceAdded", (msg) => {
-            socket.broadcast.emit("newDeviceUpdate", socket.id);
-          });
-
-
-    // Event: Join an existing room
+    // for joining old room
     socket.on("join-room", ({ roomId }) => {
-      if (players[roomId]) {
-        socket.join(roomId); // Join the room
-        players[roomId][socket.id] = { x: 0, y: 0 }; // Initialize player's position
-        console.log(`User ${socket.id} joined room: ${roomId}`);
-
-
-       // console.log("inside join room : " + players[roomId])
-        // Send info of current players in the room to the newly joined user
-        const playersInRoom = Object.keys(players[roomId]).map((id) => ({
-          id,
-          ...players[roomId][id],
-        }));
-
-        console.log(playersInRoom)
-        io.to(socket.id).emit("infoOfLivePlayers", playersInRoom);
-
-        // Notify other players in the room
-        socket.to(roomId).emit("newPlayerJoined", { id: socket.id });
-      } else {
-        console.log(`Room ${roomId} does not exist.`);
-        io.to(socket.id).emit("room-not-found", { roomId });
+      if (map.has(roomId) === false) {
+        io.to(socket.id).emit("error", "Room Id Doesn't Exist");
+        return;
       }
+      socket.join(roomId);
+      map.get(roomId)[socket.id] = { x: 800, y: 852 };
+      io.to(socket.id).emit(
+        "room-joined",
+        `Room ${roomId} joined successfully.`
+      );
+
+      socket.to(roomId).emit('newDeviceUpdate', socket.id)
     });
 
-    // Event: Sprite movement
-    socket.on("sprite-move", ({ roomId, data }) => {
-      if (players[roomId] && players[roomId][socket.id]) {
-        players[roomId][socket.id] = data; // Update position
-        socket.to(roomId).emit("sprite-update", { id: socket.id, ...data }); // Broadcast within room
+    // for tracking movement
+    socket.on("sprite-move", (data) => {
+      if (map.has(data.roomId) === false) {
+        io.to(socket.id).emit("error", "Room Id Doesn't Exist");
+        return
       }
+      map.get(data.roomId)[socket.id] = data;
+      socket.to(data.roomId).emit("sprite-update", { id: socket.id, ...data });
     });
 
-
-    // Event: Creation complete
-    socket.on("creation-complete", () => {
-      const playersWithIds = Object.keys(players)
-        .map((roomId) => {
-          return Object.keys(players[roomId]).map((id) => ({
-            id: id,
-            x: players[roomId][id].x,
-            y: players[roomId][id].y,
-            roomId,
-          }));
-        })
-        .flat()
+    // for getting info about live players
+    socket.on("creation-complete", ({roomId}) => {
+      if (map.has(roomId) === false) {
+        io.to(socket.id).emit("error", "Room Id Doesn't Exist");
+        return
+      }
+      const playersRoomId = map.get(roomId)
+      const playersWithIds = Object.keys(playersRoomId)
+        .map((id) => ({
+          id: id,
+          x: map.get(roomId)[id].x,
+          y: map.get(roomId)[id].y,
+        }))
         .filter((playerObj) => playerObj.id !== socket.id);
 
       io.to(socket.id).emit("infoOfLivePlayers", playersWithIds);
     });
 
-    // Event: Disconnect
+    // for disconnect
     socket.on("disconnect", () => {
       console.log("A user disconnected:", socket.id);
 
-      // Remove the player from all rooms
-      for (const roomId in players) {
-        if (players[roomId][socket.id]) {
-          delete players[roomId][socket.id]; // Remove the player
-
-          // Notify other players in the room
-          socket.to(roomId).emit("sprite-disconnect", { id: socket.id });
-
-          // Clean up empty rooms
-          if (Object.keys(players[roomId]).length === 0) {
-            delete players[roomId];
-            console.log(`Room ${roomId} deleted as it is empty.`);
-          }
+      let roomId = null;
+      for (let [room, users] of map) {
+        if (users[socket.id]) {
+          roomId = room;
+          break;
         }
       }
+      if (roomId) {
+        delete map.get(roomId)[socket.id];
+        if (Object.keys(map.get(roomId)).length === 0) {
+          map.delete(roomId);
+          console.log(`Room ${roomId} is now empty and has been deleted.`);
+        }
+      }
+      socket.broadcast.emit("sprite-disconnect", { id: socket.id });
     });
   });
 }
