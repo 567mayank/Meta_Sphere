@@ -86,5 +86,31 @@ export function setupSocket(io) {
       }
       socket.broadcast.emit("sprite-disconnect", { id: socket.id });
     });
+
+   
+    
+    
+    // Handle RTC offer
+    socket.on("rtc-offer", ({ targetId, offer }) => {
+      io.to(targetId).emit("rtc-offer", { senderId: socket.id, offer });
+    });
+  
+    // Handle RTC answer
+    socket.on("rtc-answer", ({ targetId, answer }) => {
+      io.to(targetId).emit("rtc-answer", { senderId: socket.id, answer });
+    });
+  
+    // Handle ICE candidate exchange
+    socket.on("rtc-ice-candidate", ({ targetId, candidate }) => {
+      io.to(targetId).emit("rtc-ice-candidate", { senderId: socket.id, candidate });
+    });
+  
+    socket.on("disconnect", () => {
+      console.log("Client disconnected:", socket.id);
+    });
+  
+    
+
+
   });
 }
