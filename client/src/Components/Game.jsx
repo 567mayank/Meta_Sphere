@@ -1,199 +1,3 @@
-// import React, { useEffect, useState } from "react";
-// import {useNavigate} from 'react-router-dom'
-// import Phaser from "phaser";
-// import { preloadAssets } from "../UtilitiesFunction/preloadAssets";
-// import { createObjects } from "../UtilitiesFunction/objects";
-// import { createPlayer } from "../UtilitiesFunction/character";
-// import { createBackground } from "../UtilitiesFunction/background";
-// import { playerMovement } from "../UtilitiesFunction/playerMovement";
-// import { useSocket } from "../SocketContext";
-// import {
-//   deletePlayer,
-//   movePlayerTo,
-// } from "../UtilitiesFunction/multiPlayerFunctions";
-
-// function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }) {
-//   const [posX, setX] = useState(screenWidth / 2);
-//   const [posY, setY] = useState(screenHeight);
-//   const socket = useSocket();
-//   const navigate = useNavigate()
-//   const [phaserGame, setPhaserGame] = useState(null);
-
-//   useEffect(() => {
-//     socket.emit("sprite-move", { x: posX, y: posY, roomId, name });
-//     socket.on('error', (msg) => {
-//       alert(msg)
-//       navigate("/")
-//       return
-//     })
-//   }, [posX, posY]);
-
-//   useEffect(() => {
-//     let objects, cursors, player;
-//     let players = new Map();
-
-//     class Example extends Phaser.Scene {
-//       preload() {
-//         preloadAssets(this);
-//       }
-
-//       create() {
-//         createBackground(
-//           this,
-//           screenWidth,
-//           screenHeight,
-//           tileWidth,
-//           tileHeight,
-//           "background"
-//         );
-
-//         objects = this.physics.add.staticGroup();
-//         createObjects(this, screenWidth, screenHeight, tileHeight, objects);
-
-//         player = this.createSecondPlayer(name);
-
-//         createPlayer(this, player, "char1");
-//         this.physics.add.collider(player, objects);
-
-//         cursors = this.input.keyboard.createCursorKeys();
-
-//         // for spawning of new player on board
-//         socket.on("newDeviceUpdate", ({socketId, name}) => {
-//           const newPlayer = this.createSecondPlayer(name);
-//           players.set(socketId, newPlayer);
-//         });
-
-//         // for updating live players
-//         socket.on("infoOfLivePlayers", (msg) => {
-//           msg.map((playerData) => {
-//             const newPlayer = this.createSecondPlayer(
-//               playerData.name,
-//               playerData.x,
-//               playerData.y,
-//               "char1"
-//             );
-//             movePlayerTo(newPlayer, playerData.x, playerData.y, "turn", this);
-//             players.set(playerData.id, newPlayer);
-//           });
-//         });
-
-//         // Notify server of scene creation
-//         socket.emit("creation-complete", {roomId});
-
-//         // For updating other players' positions
-//         socket.on("sprite-update", (msg) => {
-//           const otherPlayer = players.get(msg.id);
-//           if (otherPlayer) {
-//             let x = otherPlayer.x;
-//             let y = otherPlayer.y;
-//             if (msg.x > x)
-//               movePlayerTo(otherPlayer, msg.x, msg.y, "right", this);
-//             else if (msg.x < x)
-//               movePlayerTo(otherPlayer, msg.x, msg.y, "left", this);
-//             else if (msg.y > y)
-//               movePlayerTo(otherPlayer, msg.x, msg.y, "down", this);
-//             else movePlayerTo(otherPlayer, msg.x, msg.y, "up", this);
-//           }
-//         });
-
-//         // Handle player disconnect
-//         socket.on("sprite-disconnect", (msg) => {
-//           const playerToRemove = players.get(msg.id);
-//           if (playerToRemove) {
-//             deletePlayer(playerToRemove);
-//             players.delete(msg.id);
-//           }
-//         });
-//       }
-
-//       // Create a new player with a name above their head
-//       createSecondPlayer(
-//         playerName = "char1",
-//         charHeight = screenHeight,
-//         charWidth = screenWidth / 2,
-//         charName = "char1"
-//       ) {
-//         const secondPlayer = this.physics.add
-//           .sprite(charWidth, charHeight, charName)
-//           .setDisplaySize(tileHeight * 1.3, tileHeight * 1.7)
-//           .setSize(tileHeight * 2, tileHeight * 1.3)
-//           .setOffset(tileHeight, tileHeight * 4.5)
-//           .refreshBody();
-
-//         const playerNameText = this.add
-//           .text(charWidth, charHeight - tileHeight, " " + playerName + " ", {
-//             font: "16px Arial",
-//             fill: "#000000",
-//             align: "center",
-//             backgroundColor: "#ffffff",
-//           })
-//           .setOrigin(0.5, 0.5);
-
-//         secondPlayer.playerNameText = playerNameText;
-
-//         this.physics.add.collider(secondPlayer, objects);
-//         return secondPlayer;
-//       }
-
-//       update() {
-//         // Update player movement
-//         playerMovement(player, cursors, 70);
-//         setX(player.x);
-//         setY(player.y);
-
-//         player.playerNameText.setPosition(player.x, player.y - tileHeight);
-
-//         // Update the positions of all players' name text
-//         players.forEach((playerSprite, id) => {
-//           playerSprite.playerNameText.setPosition(
-//             playerSprite.x,
-//             playerSprite.y - tileHeight
-//           );
-//         });
-//       }
-//     }
-
-//     // Phaser game configuration
-//     const config = {
-//       type: Phaser.AUTO,
-//       width: 1600,
-//       height: 900,
-//       scale: {
-//         mode: Phaser.Scale.FIT,
-//       },
-//       scene: Example,
-//       parent: "game-container",
-//       physics: {
-//         default: "arcade",
-//         arcade: {
-//           gravity: { y: 0 },
-//           debug: false,
-//         },
-//       },
-//     };
-
-//     const phaserGameInstance = new Phaser.Game(config);
-//     setPhaserGame(phaserGameInstance);
-
-//     return () => {
-//       phaserGameInstance.destroy(true);
-//     };
-//   }, []);
-
-//   return (
-//     <div>
-//       <div>
-//         {posX} {posY}
-//       </div>
-//       <div
-//         id="game-container"
-//         className="border-4 border-red-400 scale-90 flex bg-zinc-800 max-w-fit m-auto rounded-md"
-//       />
-//     </div>
-//   );
-// }
-
-// export default Game;
 
 
 import React, { useEffect, useState } from "react";
@@ -210,6 +14,9 @@ import {
   movePlayerTo,
 } from "../UtilitiesFunction/multiPlayerFunctions";
 
+import VideoCall from "./VideoCall";
+import { initAgoraRTM } from "../UtilitiesFunction/agoraRtm";
+
 function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }) {
   const [posX, setX] = useState(screenWidth / 2);
   const [posY, setY] = useState(screenHeight);
@@ -217,9 +24,11 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }
   const socket = useSocket();
   const navigate = useNavigate();
   const [phaserGame, setPhaserGame] = useState(null);
-  const [isVideoOn, setIsVideoOn] = useState(true);
-  const [isMicOn, setIsMicOn] = useState(true);
-  
+  const [rtmClient, setRtmClient] = useState(null);
+  const [USER_ID, setUserId] = useState(null);
+
+
+
   // Peer connection management
   const peerConnections = new Map();
 
@@ -477,26 +286,18 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }
     };
   }, []);
 
-  const toggleVideo = () => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoOn(videoTrack.enabled);
-      }
-    }
-  };
+  useEffect(() => {
+    // Initialize Agora RTM and set state
+    initAgoraRTM().then(({ client, USER_ID }) => {
+      setRtmClient(client);
+      setUserId(USER_ID);
+    });
 
-  // Toggle microphone
-  const toggleMic = () => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsMicOn(audioTrack.enabled);
-      }
-    }
-  };
+    return () => {
+      if (rtmClient) rtmClient.logout();
+    };
+  }, []);
+
 
 
   return (
@@ -509,29 +310,10 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }
         className="border-4 border-red-400 scale-90 flex bg-zinc-800 max-w-fit m-auto rounded-md"
       />
       <div id="video-container" className="flex gap-4"></div>
-      <video
-        id="local-video"
-        autoPlay
-        muted
-        className="w-40 h-40 border-2 border-gray-300 rounded bg-black"
-      />
 
-       {/* Control bar */}
-       <div className="absolute bottom-0 left-0 right-0 bg-gray-800 p-2 flex justify-between items-center">
-        <button
-          onClick={toggleMic}
-          className={`bg-blue-500 text-white p-2 rounded ${isMicOn ? '' : 'bg-red-500'}`}
-        >
-          {isMicOn ? "Mute Mic" : "Unmute Mic"}
-        </button>
-        <button
-          onClick={toggleVideo}
-          className={`bg-blue-500 text-white p-2 rounded ${isVideoOn ? '' : 'bg-red-500'}`}
-        >
-          {isVideoOn ? "Turn Off Video" : "Turn On Video"}
-        </button>
-      </div>
-    
+      {rtmClient && USER_ID && (
+        <VideoCall rtmClient={rtmClient} USER_ID={USER_ID} />
+      )}
 
     </div>
   );
