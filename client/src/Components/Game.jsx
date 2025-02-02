@@ -32,27 +32,27 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }
   // Peer connection management
   const peerConnections = new Map();
 
-  const getLocalMedia = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+  // const getLocalMedia = async () => {
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia({
+  //       video: true,
+  //       audio: true,
+  //     });
 
-      console.log("Local stream:", stream); // Debugging log
-      setLocalStream(stream);
+  //     console.log("Local stream:", stream); // Debugging log
+  //     setLocalStream(stream);
 
-      const videoElement = document.getElementById("local-video");
-      if (videoElement) {
-        videoElement.srcObject = stream;
-        console.log("Local video element set up.");
-      } else {
-        console.error("Local video element not found.");
-      }
-    } catch (err) {
-      console.error("Error accessing media devices:", err);
-    }
-  };
+  //     const videoElement = document.getElementById("local-video");
+  //     if (videoElement) {
+  //       videoElement.srcObject = stream;
+  //       console.log("Local video element set up.");
+  //     } else {
+  //       console.error("Local video element not found.");
+  //     }
+  //   } catch (err) {
+  //     console.error("Error accessing media devices:", err);
+  //   }
+  // };
 
   const setupPeerConnection = (targetId) => {
     const connection = new RTCPeerConnection({
@@ -87,7 +87,7 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }
   };
 
   useEffect(() => {
-    getLocalMedia();
+    //getLocalMedia();
 
     socket.on("rtc-offer", async ({ senderId, offer }) => {
       const connection = setupPeerConnection(senderId);
@@ -314,6 +314,8 @@ function Game({ screenWidth, screenHeight, tileWidth, tileHeight, roomId, name }
       {rtmClient && USER_ID && (
         <VideoCall rtmClient={rtmClient} USER_ID={USER_ID} />
       )}
+
+      
 
     </div>
   );
